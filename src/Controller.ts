@@ -19,14 +19,11 @@ export const ControllerOptionsDefaults: Required<ControllerOptions> = {
 export abstract class Controller extends EuphonyNode {
   /* Data Members and Constructor */
 
-  readonly input: AudioNode;
-  readonly output: AudioNode;
-
   /**
    * Underlying gain node for controlling volume
    * @internal
    */
-  private _gainNode: GainNode;
+  protected _gainNode: GainNode;
   /**
    * Euphony analyser for visualization
    */
@@ -59,9 +56,5 @@ export abstract class Controller extends EuphonyNode {
     this._gainNode = CONTEXT.createGain();
     this._gainNode.gain.value = updatedOptions.volume;
     this._gainNode.connect(this.analyser.input);
-
-    // denote input and output WebAudio nodes
-    this.input = this._gainNode;
-    this.output = this.analyser.output;
   }
 }

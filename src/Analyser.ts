@@ -61,7 +61,7 @@ export class Analyser extends EuphonyNode {
    * Underlying analyser node for visualization data
    * @category Settings
    */
-  private _analyserNode: AnalyserNode;
+  protected _analyserNode: AnalyserNode;
   /**
    * Window size used by the Fast Fourier Transform (FFT) for analysis.
    * Higher values increase the detail in the frequency data but decrease detail in the waveform data
@@ -161,7 +161,7 @@ export class Analyser extends EuphonyNode {
    * Buffer to hold raw frequency data
    * @category Data
    */
-  private _frequencyBuffer: Uint8Array;
+  protected _frequencyBuffer: Uint8Array;
   /**
    * Computed frequency data with each item being the normalized decibel value from 0.0 to 1.0 for a specefic frequency.
    * Where the range of the scale represents {@link Analyser.minDecibels} and {@link Analyser.maxDecibels} respectively.
