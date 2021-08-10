@@ -1,4 +1,4 @@
-import { CONTEXT } from './Euphony';
+import { CONTEXT, EuphonyNode } from './Euphony';
 
 /**
  * Options for configuring {@link Analyser}
@@ -49,10 +49,13 @@ export const AnalyserOptionsDefaults: Required<AnalyserOptions> = {
 };
 
 /**
- * TODO: Add Dec
+ * Analyser which retrieves frequency/waveform data of the signal passing through it
  */
-export class Analyser {
+export class Analyser extends EuphonyNode {
   /* Data Members and Constructor */
+
+  readonly input: AudioNode;
+  readonly output: AudioNode;
 
   /**
    * Underlying analyser node for visualization data
@@ -83,7 +86,8 @@ export class Analyser {
     this.#waveform = new Uint8Array(this.fftSize);
   }
   /**
-   * TODO: placeholder
+   * Number of frequency bins used for the FFT.
+   * Equal to half of the {@link Analyser.fftSize} and represents the length of {@link Analyser.frequency}
    * @category Settings
    * @readonly
    */
@@ -138,7 +142,7 @@ export class Analyser {
     this._analyserNode.smoothingTimeConstant = value;
   }
   /**
-   * TODO: placeholder
+   * Threshold which sets {@link Analyser.signal} to true when {@link Analyser.amplitude} is greater than it
    * @category Settings
    */
   get threshold(): number {
@@ -161,7 +165,7 @@ export class Analyser {
   /**
    * Computed frequency data with each item being the normalized decibel value from 0.0 to 1.0 for a specefic frequency.
    * Where the range of the scale represents {@link Analyser.minDecibels} and {@link Analyser.maxDecibels} respectively.
-   * The frequencies are linearly spread from 0 to half of the (TODO ADD LINK TO SAMPLERATE)
+   * The frequencies are linearly spread from 0 to half of the sample rate which is determined by the audio device used for output
    * and the length of the array is equal to the {@link Analyser.frequencyBinCount}.
    *
    * ***Note: Only updated on {@link Analyser.updateFrequency} call****
@@ -177,7 +181,7 @@ export class Analyser {
    * Computed amplitude showing the mean normalized decibel value from 0.0 to 1.0,
    * where the minimum of the scale represents the {@link Analyser.minDecibels} and the maximum {@link Analyser.maxDecibels}.
    *
-   * ***Note: Only updated on {@link Analyser.updateFrequency} call****
+   * ***Note: Only updated on {@link Analyser.updateFrequency} call***
    * @category Data
    * @readonly
    */
@@ -200,7 +204,7 @@ export class Analyser {
   #signal: boolean;
 
   /**
-   * TODO: add dec
+   * TODO: add desc (also need to figure out how waveform data is scaled/represented)
    * @category Data
    * @readonly
    */
@@ -211,20 +215,25 @@ export class Analyser {
   #waveform: Uint8Array;
 
   /**
-   * Creates an analyser
+   *
    * @constructor
    * @param options Optional parameters for creating the analyser. See {@link AnalyserOptions} for more details
    */
   constructor(options: AnalyserOptions = {}) {
+    super();
     // update options to include defaults
     const updatedOptions: Required<AnalyserOptions> = { ...AnalyserOptionsDefaults, ...options };
 
     // create underlying analyser node and apply options
-    this._analyserNode = new AnalyserNode(CONTEXT);
+    this._analyserNode = CONTEXT.createAnalyser();
     this.fftSize = updatedOptions.fftSize;
     this.minDecibels = updatedOptions.minDecibels;
     this.maxDecibels = updatedOptions.maxDecibels;
     this.smoothingTimeConstant = updatedOptions.smoothingTimeConstant;
+
+    // denote input and output WebAudio nodes
+    this.input = this._analyserNode;
+    this.output = this._analyserNode;
 
     // create frequency buffer
     this._frequencyBuffer = new Uint8Array(this.frequencyBinCount);
@@ -243,14 +252,7 @@ export class Analyser {
   /* Functions */
 
   /**
-   * TODO: add desc
-   */
-  connect(destination: AudioNode) {
-    this._analyserNode.connect(destination);
-  }
-
-  /**
-   * TODO: add desc
+   * Updates the data for {@link Analyser.frequency}, {@link Analyser.amplitude}, and {@link Analyser.signal}
    */
   updateFrequency(): void {
     // get raw frequency data (scale is 0-255)
@@ -270,7 +272,7 @@ export class Analyser {
   }
 
   /**
-   * TODO: add desc
+   * TODO: add desc (also need to figure out how waveform data is scaled/represented)
    */
   updateWaveform(): void {
     // get waveform data

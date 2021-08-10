@@ -8,3 +8,35 @@
 export const CONTEXT: AudioContext = new AudioContext();
 
 // TODO: add in support for legacy browsers
+
+export abstract class EuphonyNode {
+  /**
+   * Underlying WebAudio node used for input to the Euphony node
+   * @category Utility
+   * @readonly
+   */
+  abstract readonly input: AudioNode | null;
+  /**
+   * Underlying WebAudio node used for output from the Euphony node
+   * @category Utility
+   * @readonly
+   */
+  abstract readonly output: AudioNode;
+
+  /**
+   * Function for connecting a Euphony node to another Euphony node or a WebAudio node
+   * @param destination The destionation to connect to, either a Euphony node or base WebAudio node
+   * @category Utility
+   */
+  connect(destination: EuphonyNode | AudioNode): void {
+    if (destination instanceof EuphonyNode) {
+      if (destination.input === null) {
+        throw new Error('Cannot connect to source node');
+      } else {
+        this.output.connect(destination.input);
+      }
+    } else {
+      this.output.connect(destination);
+    }
+  }
+}
