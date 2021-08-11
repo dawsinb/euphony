@@ -1,3 +1,16 @@
+// typescript fix for audio context types
+type Constructable<T> = new (...args: any) => T;
+declare global {
+  interface Window {
+    AudioContext: Constructable<AudioContext>;
+    webkitAudioContext: Constructable<AudioContext>;
+  }
+}
+// support for legacy browsers
+if (typeof window !== 'undefined') {
+  const AudioContext: Constructable<AudioContext> = window.AudioContext || window.webkitAudioContext;
+}
+
 /**
  * Audio context used for the creation and management of underlying WebAudio nodes.
  *
@@ -7,8 +20,9 @@
  */
 export const CONTEXT: AudioContext = new AudioContext();
 
-// TODO: add in support for legacy browsers
-
+/**
+ * Base class used by all euphony nodes
+ */
 export abstract class EuphonyNode {
   /**
    * Underlying WebAudio node used for input to the Euphony node

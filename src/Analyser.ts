@@ -72,7 +72,7 @@ export class Analyser extends EuphonyNode {
   }
   set fftSize(value: number) {
     // check if given number is within the bounds of 2^5 and 2^15 and is a power of 2
-    if (value < 2 ** 5 || value > 2 ** 5 || !(Math.log2(value) % 1 === 0)) {
+    if (value < 2 ** 5 || value > 2 ** 15 || !(Math.log2(value) % 1 === 0)) {
       throw new RangeError(
         `FFT window must be a power of 2 within bounds of 2^5 and 2^15. Attempted input of ${value}`,
       );
@@ -146,7 +146,7 @@ export class Analyser extends EuphonyNode {
    * @category Settings
    */
   get threshold(): number {
-    return this.threshold;
+    return this.#threshold;
   }
   set threshold(value: number) {
     // check if given number is within the bounds of 0 and 1
@@ -154,8 +154,10 @@ export class Analyser extends EuphonyNode {
       throw new RangeError(`Threshold must be within bounds of 0 and 1. Attempted input of ${value}`);
     }
 
-    this.threshold = value;
+    this.#threshold = value;
   }
+  /** @internal */
+  #threshold: number;
 
   /**
    * Buffer to hold raw frequency data
@@ -243,7 +245,7 @@ export class Analyser extends EuphonyNode {
     this.#amplitude = 0;
     this.#signal = false;
     // init threshold to given option param
-    this.threshold = updatedOptions.fftSize;
+    this.#threshold = updatedOptions.threshold;
 
     // create waveform buffer
     this.#waveform = new Uint8Array(this.fftSize);

@@ -1,13 +1,13 @@
 import { CONTEXT } from './Euphony';
 import { Controller, ControllerOptions, ControllerOptionsDefaults } from './Controller';
 
-
 interface PlaybackOptions extends ControllerOptions {
-
+  loop: boolean;
 }
 const PlaybackOptionsDefaults: Required<PlaybackOptions> = {
-  ...ControllerOptionsDefaults
-}
+  loop: false,
+  ...ControllerOptionsDefaults,
+};
 
 class Playback extends Controller {
   readonly input: null;
@@ -22,9 +22,9 @@ class Playback extends Controller {
 
     // create buffer source node and connect it to the gain node
     this._sourceNode = CONTEXT.createBufferSource();
-    this._sourceNode.connect(this._gainNode)
+    this._sourceNode.connect(this._gainNode);
 
-    this.input = null
+    this.input = null;
     this.output = this.analyser.output;
   }
 }
