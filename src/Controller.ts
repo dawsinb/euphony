@@ -56,5 +56,8 @@ export abstract class Controller extends EuphonyNode {
     this._gainNode = CONTEXT.createGain();
     this._gainNode.gain.value = updatedOptions.volume;
     this._gainNode.connect(this.analyser.input);
+
+    // connect controller to output
+    this.analyser.connect(CONTEXT.destination);
   }
 }

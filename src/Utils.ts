@@ -1,8 +1,12 @@
-export interface CallbackOptions {
+/**
+ * TODO: add desc
+ */
+export interface Callbacks {
   onLoad?: () => void;
   onError?: () => void;
 }
-export const DefaultCallbackOptions: Required<CallbackOptions> = {
+/** @internal */
+export const DefaultCallbacks: Required<Callbacks> = {
   onLoad: () => undefined,
   onError: () => undefined,
 };

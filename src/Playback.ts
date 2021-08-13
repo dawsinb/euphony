@@ -1,6 +1,6 @@
 import { CONTEXT } from './Euphony';
 import { Controller, ControllerOptions, ControllerOptionsDefaults } from './Controller';
-import { CallbackOptions, DefaultCallbackOptions } from './Utils';
+import { Callbacks, DefaultCallbacks } from './Utils';
 
 /**
  * Options for configuring {@link Playback}
@@ -77,9 +77,12 @@ export class Playback extends Controller {
     this._sourceNode.connect(this._gainNode);
     // initialize empty buffer
     this._buffer = CONTEXT.createBuffer(1, 1, CONTEXT.sampleRate);
+
+    // create buffer source node and connect it to the gain node
+    this._sourceNode = CONTEXT.createBufferSource();
     this._sourceNode.buffer = this._buffer;
-    // set buffer source options
-    this.loop = updatedOptions.loop;
+    this._sourceNode.loop = updatedOptions.loop;
+    this._sourceNode.connect(this._gainNode);
 
     // set input and output WebAudio nodes (source node: so input is null)
     this.input = null;
@@ -91,9 +94,9 @@ export class Playback extends Controller {
    * @param url Url to load the audio data from (Can be local or external)
    * @param callbacks Callback functions to be used be the loader
    */
-  async load(url: string, callbacks: CallbackOptions = {}): Promise<void> {
+  async load(url: string, callbacks: Callbacks = {}): Promise<void> {
     // update options to include defaults
-    const updatedOptions = { ...DefaultCallbackOptions, callbacks };
+    const updatedCallbacks: Required<Callbacks> = { ...DefaultCallbacks, ...callbacks };
 
     return (
       fetch(url)
@@ -108,14 +111,17 @@ export class Playback extends Controller {
         // decode array buffer
         .then((buffer) => {
           CONTEXT.decodeAudioData(buffer, (decoded) => {
+            // update internal buffer
             this._buffer = decoded;
-            this._sourceNode.buffer = this._buffer;
-            updatedOptions.onLoad();
+            // replace source node
+            this._replaceSource();
+
+            updatedCallbacks.onLoad();
           });
         })
         // error handling
         .catch((error) => {
-          updatedOptions.onError();
+          updatedCallbacks.onError();
           throw new Error(`There was a problem with fetching/loading the audio: ${error}`);
         })
     );
@@ -169,12 +175,8 @@ export class Playback extends Controller {
       this._sourceNode.stop(adjustedDelay);
       this._pauseTime = adjustedDelay;
 
-      // create new audio node to replace current node
-      const replacementNode = CONTEXT.createBufferSource();
-      replacementNode.buffer = this._buffer;
-      // replace the audio node
-      this._sourceNode = replacementNode;
-      replacementNode.connect(this._gainNode);
+      // replace source node
+      this._replaceSource();
     }
   }
   /**
@@ -193,12 +195,8 @@ export class Playback extends Controller {
       // stop current audio node (this effectively deletes the node)
       this._sourceNode.stop(adjustedDelay);
 
-      // create new audio node to replace current node
-      const replacementNode = CONTEXT.createBufferSource();
-      replacementNode.buffer = this._buffer;
-      // replace the audio node
-      this._sourceNode = replacementNode;
-      replacementNode.connect(this._gainNode);
+      // replace source node
+      this._replaceSource();
     }
   }
 
@@ -213,5 +211,22 @@ export class Playback extends Controller {
     } else {
       return 0.0;
     }
+  }
+
+  /**
+   * Replaces the buffer source node with a new node with the internal buffer stored by Playback
+   */
+  private _replaceSource(): void {
+    // create replacement node
+    const replacementNode = CONTEXT.createBufferSource();
+    replacementNode.buffer = this._buffer;
+    replacementNode.loop = this.loop;
+
+    // remove old node
+    this._sourceNode.disconnect();
+
+    // replace and connect new node
+    replacementNode.connect(this._gainNode);
+    this._sourceNode = replacementNode;
   }
 }

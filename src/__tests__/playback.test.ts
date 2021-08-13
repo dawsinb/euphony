@@ -22,7 +22,6 @@ describe('Playback Tests', () => {
         fftSize: 1024,
       };
       const playback = new Euphony.Playback(options);
-      
 
       // test params from playback class
       expect(playback.loop).toBe(options.loop);
