@@ -1,5 +1,5 @@
 // compatibility fix for web audio api to work with jsdom
-require('web-audio-test-api');
+import 'web-audio-test-api';
 // import euphony
 import * as Euphony from '../index';
 

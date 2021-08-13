@@ -6,7 +6,7 @@ import { CallbackOptions, DefaultCallbackOptions } from './Utils';
  * Options for configuring {@link Playback}
  */
 export interface PlaybackOptions extends ControllerOptions {
-  loop: boolean;
+  loop?: boolean;
 }
 /** @internal */
 export const PlaybackOptionsDefaults: Required<PlaybackOptions> = {
@@ -67,7 +67,7 @@ export class Playback extends Controller {
    * @constructor
    * @param options Optional parameters for creating the playback. See {@link PlaybackOptions} for more details
    */
-  constructor(options: PlaybackOptions) {
+  constructor(options: PlaybackOptions = {}) {
     super(options);
     // update options to include defaults
     const updatedOptions: Required<PlaybackOptions> = { ...PlaybackOptionsDefaults, ...options };
@@ -76,7 +76,7 @@ export class Playback extends Controller {
     this._sourceNode = CONTEXT.createBufferSource();
     this._sourceNode.connect(this._gainNode);
     // initialize empty buffer
-    this._buffer = new AudioBuffer({ length: 0, sampleRate: CONTEXT.sampleRate });
+    this._buffer = CONTEXT.createBuffer(1, 1, CONTEXT.sampleRate);
     this._sourceNode.buffer = this._buffer;
     // set buffer source options
     this.loop = updatedOptions.loop;
@@ -91,7 +91,7 @@ export class Playback extends Controller {
    * @param url Url to load the audio data from (Can be local or external)
    * @param callbacks Callback functions to be used be the loader
    */
-  async load(url: string, callbacks: CallbackOptions): Promise<void> {
+  async load(url: string, callbacks: CallbackOptions = {}): Promise<void> {
     // update options to include defaults
     const updatedOptions = { ...DefaultCallbackOptions, callbacks };
 
