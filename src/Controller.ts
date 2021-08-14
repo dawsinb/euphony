@@ -17,6 +17,30 @@ export const ControllerOptionsDefaults: Required<ControllerOptions> = {
  * Controller used by source and logical nodes, which includes volume control and an {@link Analyser} for visualization
  */
 export abstract class Controller extends EuphonyNode {
+  /* Abstract Members */
+
+  /**
+   * Shcedules the audio to be played
+   *
+   * *Note: It is recommended to allow some amount of scheduling time to prevent audio glitches*
+   * @param delay Amount of time in seconds before the audio begins playback
+   */
+  abstract play(delay: number): void;
+  /**
+   * Shcedules the audio to be paused, playback can then be resumed by calling {@link Controller.play}
+   *
+   * *Note: It is recommended to allow some amount of scheduling time to prevent audio glitches*
+   * @param delay Amount of time in seconds before the audio is paused
+   */
+  abstract pause(delay: number): void;
+  /**
+   * Shcedules the audio to be paused, playback can then be resumed by calling {@link Playback.play}
+   *
+   * *Note: It is recommended to allow some amount of scheduling time to prevent audio glitches*
+   * @param delay Amount of time in seconds before the audio is paused
+   */
+  abstract stop(delay: number): void;
+
   /* Data Members and Constructor */
 
   /**

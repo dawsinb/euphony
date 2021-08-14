@@ -33,10 +33,16 @@ export class Playback extends Controller {
    */
   private _buffer: AudioBuffer;
   /**
-   * Returns the length of the underlying audio buffer. In other words the length of the loaded audio
+   * Returns the length of the underlying audio buffer
    */
   get length(): number {
     return this._buffer.length;
+  }
+  /**
+   * Returns the duration in seconds of the underlying audio buffer
+   */
+  get duration(): number {
+    return this._buffer.duration;
   }
 
   /**
@@ -89,6 +95,8 @@ export class Playback extends Controller {
     this.output = this.analyser.output;
   }
 
+  /* Functions */
+
   /**
    * Loads audio from the given url into the audio node
    * @param url Url to load the audio data from (Can be local or external)
@@ -133,7 +141,7 @@ export class Playback extends Controller {
    * *Note: It is recommended to allow some amount of scheduling time to prevent audio glitches*
    * @param delay Amount of time in seconds before the audio begins playback
    */
-  play(delay = 0.1) {
+  play(delay: number = 0.1): void {
     // ensure playback isn't already ongoing
     if (!this._playing) {
       // record playback status
@@ -162,7 +170,7 @@ export class Playback extends Controller {
    * *Note: It is recommended to allow some amount of scheduling time to prevent audio glitches*
    * @param delay Amount of time in seconds before the audio is paused
    */
-  pause(delay = 0.1): void {
+  pause(delay: number = 0.1): void {
     // TODO: REPLACE AUDIO NODE WHEN PLAYBACK IS FINISHED AND LOOPING IS DISABLED
 
     if (this._playing) {
@@ -185,7 +193,7 @@ export class Playback extends Controller {
    * *Note: It is recommended to allow some amount of scheduling time to prevent audio glitches*
    * @param delay Amount of time in seconds before the audio is stopped
    */
-  stop(delay = 0.1): void {
+  stop(delay: number = 0.1): void {
     if (this._playing) {
       // record playback status
       this._playing = false;
@@ -215,6 +223,7 @@ export class Playback extends Controller {
 
   /**
    * Replaces the buffer source node with a new node with the internal buffer stored by Playback
+   * @internal
    */
   private _replaceSource(): void {
     // create replacement node
@@ -228,5 +237,31 @@ export class Playback extends Controller {
     // replace and connect new node
     replacementNode.connect(this._gainNode);
     this._sourceNode = replacementNode;
+  }
+
+  /**
+   * Adjust the buffer to the specified length
+   * @internal
+   */
+  adjustBuffer(length: number): void {
+    // create a replacement buffer with the same number of channels and sample rate but new length
+    const replacementBuffer: AudioBuffer = CONTEXT.createBuffer(
+      this._buffer.numberOfChannels,
+      length,
+      this._buffer.sampleRate,
+    );
+
+    // buffer to hold channel data from the old audio buffer (can't transfer directly)
+    const transferBuffer: Float32Array = new Float32Array(length);
+    // loop through all channels and copy channel data to the new buffer
+    for (let i = 0; i < this._buffer.numberOfChannels; i++) {
+      this._buffer.copyFromChannel(transferBuffer, i);
+      replacementBuffer.copyToChannel(transferBuffer, i);
+    }
+
+    // replace buffer
+    this._buffer = replacementBuffer;
+    // replace source node
+    this._replaceSource();
   }
 }
