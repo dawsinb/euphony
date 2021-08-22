@@ -81,6 +81,39 @@ export class Group extends Controller {
   }
 
   /**
+   * Convenience function for updating the frequency data of all sources in a group, including the group and sub-groups
+   * See {@link Analyser.updateFrequency}
+   */
+  updateFrequencyAll(): void {
+    // loop through all sources including sub-groups recursively
+    this.#sources.forEach((source) => {
+      if (source instanceof Group) {
+        source.analyser.updateFrequency();
+        // recurse through subgroup
+        source.updateFrequencyAll();
+      } else {
+        source.analyser.updateFrequency();
+      }
+    });
+  }
+  /**
+   * Convenience function for updating the waveform data of all sources in a group, including the group and sub-groups
+   * See {@link Analyser.updateWaveform}
+   */
+  updateWaveformAll(): void {
+    // loop through all sources including sub-groups recursively
+    this.#sources.forEach((source) => {
+      if (source instanceof Group) {
+        source.analyser.updateWaveform();
+        // recurse through subgroup
+        source.updateWaveformAll();
+      } else {
+        source.analyser.updateWaveform();
+      }
+    });
+  }
+
+  /**
    * Synchronizes all members of a group to the length of the maximum buffer, including those of other connected sub-groups recursively.
    *
    * @param _length Forces the buffers to be synced to this value. ***This is only used for the recursion and does not need to be set***

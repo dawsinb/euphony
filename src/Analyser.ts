@@ -11,6 +11,10 @@ export interface AnalyserOptions {
    */
   threshold?: number;
   /**
+   * TODO add desc
+   */
+  numberOfBands?: number;
+  /**
    * Window size used by the Fast Fourier Transform (FFT) for analysis.
    * Must be a power of 2 between 2^5 and 2^15
    *
@@ -42,6 +46,7 @@ export interface AnalyserOptions {
 /** @internal */
 export const AnalyserOptionsDefaults: Required<AnalyserOptions> = {
   threshold: 0.2,
+  numberOfBands: 5,
   fftSize: 2048,
   minDecibels: -100,
   maxDecibels: -30,
@@ -206,6 +211,41 @@ export class Analyser extends EuphonyNode {
   #signal: boolean;
 
   /**
+   * TODO: add desc
+   */
+  get bands(): Float32Array {
+    return this.#bands;
+  }
+  /** @internal */
+  #bands: Float32Array = new Float32Array();
+  /**
+   * TODO: add desc
+   */
+  set numberOfBands(count: number) {
+    // check if given number is within bounds
+    if (count < 1) {
+      throw RangeError(`Number of bands can't be lawer than 1`);
+    }
+    if (count > Math.log(this.fftSize)) {
+      throw RangeError(`Number of bands can't be greater than the log of the fftWindow ${Math.log(this.fftSize)}`);
+    }
+
+    // update number of bands
+    this.#numberOfBands = count;
+    // create new array with updated size
+    this.#bands = new Float32Array(this.numberOfBands);
+    // update band intervals
+    this._bandIntervals = this.calcBandIntervals();
+  }
+  get numberOfBands(): number {
+    return this.#numberOfBands;
+  }
+  /** @internal */
+  #numberOfBands: number = 0;
+  /** @internal */
+  private _bandIntervals: Array<number> = [];
+
+  /**
    * TODO: add desc (also need to figure out how waveform data is scaled/represented)
    * @category Data
    * @readonly
@@ -247,6 +287,9 @@ export class Analyser extends EuphonyNode {
     // init threshold to given option param
     this.#threshold = updatedOptions.threshold;
 
+    // update number of bands
+    this.numberOfBands = updatedOptions.numberOfBands;
+
     // create waveform buffer
     this.#waveform = new Uint8Array(this.fftSize);
   }
@@ -266,11 +309,23 @@ export class Analyser extends EuphonyNode {
       this.frequency[i] = this._frequencyBuffer[i] / 255;
       sum += this._frequencyBuffer[i];
     }
-    // normalize and record mean frequency data
+    // record mean normalized frequency data
     this.#amplitude = sum / this.frequencyBinCount / 255;
 
     // update signal
     this.#signal = this.amplitude >= this.threshold;
+
+    // record band data
+    this.#bands.fill(0);
+    for (let i = 0; i < this.frequencyBinCount; i++) {
+      // get band index
+      const band = this._bandIntervals.findIndex((interval) => {
+        return interval > i;
+      });
+
+      // if current value is greater than previous then replace it
+      this.#bands[band] = Math.max(this.#bands[band], this.#frequency[i]);
+    }
   }
 
   /**
@@ -279,5 +334,33 @@ export class Analyser extends EuphonyNode {
   updateWaveform(): void {
     // get waveform data
     this._analyserNode.getByteFrequencyData(this.#waveform);
+  }
+
+  /**
+   * TODO: add desc
+   * @internal
+   */
+  private calcBandIntervals(): Array<number> {
+    // calculate logarithmic difference of start and end point
+    const logDiff = Math.log(this.fftSize) / this.numberOfBands;
+    // calculate exponential factor
+    const factor = Math.exp(logDiff);
+
+    // create array to hold results (start is 1)
+    const intervals = [1];
+
+    // loop to create each band interval
+    // skip index 0 because we already have the start
+    // skip last index because anything not in previous bands goes in the final band
+    for (let i = 1; i < this.numberOfBands - 1; i++) {
+      // caclulate last interval times the exponential factor
+      let interval = intervals[intervals.length - 1] * factor;
+      // convert to int
+      interval = Math.floor(interval);
+
+      intervals.push(interval);
+    }
+
+    return intervals;
   }
 }
