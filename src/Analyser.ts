@@ -98,7 +98,8 @@ export class Analyser extends EuphonyNode {
     // update frequency and waveform arrays to new size
     this._frequencyBuffer = new Uint8Array(this.frequencyBinCount);
     this.#frequency = new Float32Array(this.frequencyBinCount);
-    this.#waveform = new Uint8Array(this.fftSize);
+    this._waveformBuffer = new Uint8Array(this.fftSize);
+    this.#waveform = new Float32Array(this.fftSize);
   }
   /**
    * Number of frequency bins used for the FFT.
@@ -178,7 +179,7 @@ export class Analyser extends EuphonyNode {
    * Buffer to hold raw frequency data
    * @category Data
    */
-  protected _frequencyBuffer: Uint8Array;
+  private _frequencyBuffer: Uint8Array;
   /**
    * Computed frequency data with each item being the normalized decibel value from 0.0 to 1.0 for a specefic frequency.
    * Where the range of the scale represents {@link Analyser.minDecibels} and {@link Analyser.maxDecibels} respectively.
@@ -230,7 +231,7 @@ export class Analyser extends EuphonyNode {
 
   /**
    * Frequency data by band intervals. Bands are divided up on a log-scale according to {@link Analyser.numberOfBands}.
-   * 
+   *
    * Takes the highest frequency in each band as the intensity for that band
    */
   get bands(): Float32Array {
@@ -266,15 +267,23 @@ export class Analyser extends EuphonyNode {
   private _bandIntervals: Array<number> = [];
 
   /**
-   * TODO: add desc (also need to figure out how waveform data is scaled/represented)
+   * Buffer to hold raw waveform data
+   * @category Data
+   */
+  private _waveformBuffer: Uint8Array;
+  /**
+   * Computed waveform data with each item being the normalized decibel value from -1.0 to 1.0 for each sample on the time domain.
+   * The length of the array is equal to the {@link Analyser.fftSize}.
+   *
+   * ***Note: Only updated on {@link Analyser.updateWaveform} call****
    * @category Data
    * @readonly
    */
-  get waveform(): Uint8Array {
+  get waveform(): Float32Array {
     return this.#waveform;
   }
   /** @internal */
-  #waveform: Uint8Array;
+  #waveform: Float32Array;
 
   /**
    *
@@ -315,7 +324,9 @@ export class Analyser extends EuphonyNode {
     this.numberOfBands = updatedOptions.numberOfBands;
 
     // create waveform buffer
-    this.#waveform = new Uint8Array(this.fftSize);
+    this._waveformBuffer = new Uint8Array(this.fftSize);
+    // create array to hold normalized waveform values
+    this.#waveform = new Float32Array(this.fftSize);
   }
 
   /* Functions */
@@ -365,11 +376,17 @@ export class Analyser extends EuphonyNode {
   }
 
   /**
-   * TODO: add desc (also need to figure out how waveform data is scaled/represented)
+   * Updates the data for {@link Analyser.waveform}
    */
   updateWaveform(): void {
-    // get waveform data
-    this._analyserNode.getByteFrequencyData(this.#waveform);
+    // get raw waveform data
+    this._analyserNode.getByteTimeDomainData(this._waveformBuffer);
+
+    // normalize waveform data
+    for (let i = 0; i < this.fftSize; i++) {
+      // subtract by 127 to get values between [-128, 128], then divide by 127 to normalize to [-1.0, 1.0]
+      this.#waveform[i] = (this._waveformBuffer[i] - 128) / 128;
+    }
   }
 
   /**
