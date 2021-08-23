@@ -1,6 +1,6 @@
 # euphony
 
-*Euphony* is a lightweight audio playback and visualization library for Javscript with zero dependencies and full Typescript support
+*euphony* is a lightweight audio playback and visualization library for Javscript with zero dependencies and full Typescript support
 
 Despite being designed with audio visulization in mind it can just as well be used for simple audio playback. The library allows for easy loading, playing, pausing, synchronization, visualization and more of audio files
 
@@ -59,7 +59,7 @@ const percussion = new Group({ sources: [kick, hat, snare] })
 // put it all together
 const song = new Group({ sources: [melody, percussion] });
 ```
-Options for configuring your Playbacks can be given in the constructor, set afterwards individually, or all at once in a group
+Options for configuring your Playbacks/Groups can be given in the constructor, or set afterwards
 ```js
 // set in constructor
 const melody = new Source({ volume: 0.8, loop: true })
@@ -67,10 +67,6 @@ const melody = new Source({ volume: 0.8, loop: true })
 const percussion = new Source();
 percussion.volume = 0.5;
 percussion.loop = true;
-
-// set all at once with a group
-const song = new Group({ sources: [melody, percussion] })
-song.setAll("loop", false);
 ```
 ### Visualization
 
@@ -86,7 +82,7 @@ The data available on `updateFrequency()` is as follows:
 
 The data available on `updateWaveform()` is as follows:
 
-- ***Waveform***: TODO: FIGURE OUT WAVEFORM
+- ***Waveform***: Array of normalized waveform (aka time-domain) data, where each member is a number between -1.0 and 1.0
 
 ### Example Visualization Set Up
 
@@ -103,18 +99,15 @@ Promise.all([
 
 // set up render loop
 const render = () => {
-	// update frequency data (can be individual or as a group)
+	// update frequency data
 	melody.analyser.updateFrequency();
 	percussion.analyser.updateFrequency();
-	song.analyser.updateFrequency();
-	// or waveform data (can be individual or as a group)
-	song.analyser.updateWaveformAll();
+	// or waveform data
+	song.analyser.updateWaveform();
 	
-	// access data to use in animations...
-	console.log(song.analyser.freqeuncy);
-	console.log(melody.analyser.signal);
-	console.log(percussion.analyser.waveform);
-	// ...
+	// access data to use in animations ...
+	
+	requestAnimationFrame(render);
 }
 requestAnimationFrame(render);
 ```
