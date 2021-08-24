@@ -4,9 +4,7 @@
 
 Despite being designed with audio visulization in mind it can just as well be used for simple audio playback. The library allows for easy loading, playing, pausing, synchronization, visualization and more of audio files
 
-For more thorough documentation see: TODO: ADD LINK
-
-*If you are a developer looking to work on euphony itself or otherwise need to see implementation details see: TODO: ADD LINK*
+For more thorough documentation see: [https://dawsinb.github.io/euphonydocs/](https://dawsinb.github.io/euphonydocs/)
 
 ## Set Up
 
@@ -116,4 +114,4 @@ requestAnimationFrame(render);
 
 For some more real world examples of *euphony* in action check out these codesandboxes:
 
-- TODO: ADD LINKS
+- TODO
