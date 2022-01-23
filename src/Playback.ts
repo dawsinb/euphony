@@ -48,7 +48,7 @@ export class Playback extends Controller {
   /**
    * Keeps track of the playing state of the node
    */
-  private _playing: boolean = false;
+  isPlaying: boolean = false;
   /**
    * Keeps track of the start time of the node for scheduling playback
    */
@@ -84,10 +84,18 @@ export class Playback extends Controller {
     // initialize empty buffer
     this._buffer = CONTEXT.createBuffer(1, 1, CONTEXT.sampleRate);
 
-    // create buffer source node and connect it to the gain node
+    // create buffer source node
     this._sourceNode = CONTEXT.createBufferSource();
     this._sourceNode.buffer = this._buffer;
+    // set loop mode
     this._sourceNode.loop = updatedOptions.loop;
+    // set on end callback
+    this._sourceNode.onended = () => {
+      // replace the audio buffer and set playing to false
+      this._replaceSource();
+      this.isPlaying = false;
+    };
+    // connect source to gain node for volume control
     this._sourceNode.connect(this._gainNode);
 
     // set input and output WebAudio nodes (source node: so input is null)
@@ -143,9 +151,9 @@ export class Playback extends Controller {
    */
   play(delay: number = 0.1): void {
     // ensure playback isn't already ongoing
-    if (!this._playing) {
+    if (!this.isPlaying) {
       // record playback status
-      this._playing = true;
+      this.isPlaying = true;
 
       // calculate adjusted delay time relative to the audio context
       const adjustedDelay = CONTEXT.currentTime + delay;
@@ -171,20 +179,17 @@ export class Playback extends Controller {
    * @param delay Amount of time in seconds before the audio is paused
    */
   pause(delay: number = 0.1): void {
-    // TODO: REPLACE AUDIO NODE WHEN PLAYBACK IS FINISHED AND LOOPING IS DISABLED
-
-    if (this._playing) {
+    if (this.isPlaying) {
       // record playback status
-      this._playing = false;
+      this.isPlaying = false;
 
       // calculate adjusted delay time relative to the audio context
       const adjustedDelay = CONTEXT.currentTime + delay;
-      // stop current audio node (this effectively deletes the node) and record it as the pause time
-      this._sourceNode.stop(adjustedDelay);
+      // record pause time
       this._pauseTime = adjustedDelay;
 
-      // replace source node
-      this._replaceSource();
+      // stop current playback
+      this._sourceNode.stop(adjustedDelay);
     }
   }
   /**
@@ -194,17 +199,17 @@ export class Playback extends Controller {
    * @param delay Amount of time in seconds before the audio is stopped
    */
   stop(delay: number = 0.1): void {
-    if (this._playing) {
+    if (this.isPlaying) {
       // record playback status
-      this._playing = false;
+      this.isPlaying = false;
 
       // calculate adjusted delay time relative to the audio context
       const adjustedDelay = CONTEXT.currentTime + delay;
-      // stop current audio node (this effectively deletes the node)
-      this._sourceNode.stop(adjustedDelay);
+      // delete pause time if it exists
+      this._pauseTime = 0;
 
-      // replace source node
-      this._replaceSource();
+      // stop current audio node
+      this._sourceNode.stop(adjustedDelay);
     }
   }
 
@@ -212,7 +217,7 @@ export class Playback extends Controller {
    * Returns the current playback position of the audio in seconds
    */
   getPlaybackTime(): number {
-    if (this._playing) {
+    if (this.isPlaying) {
       return (CONTEXT.currentTime - this._startTime) % this.length;
     } else if (this._pauseTime) {
       return (this._pauseTime - this._startTime) % this.length;
@@ -230,6 +235,7 @@ export class Playback extends Controller {
     const replacementNode = CONTEXT.createBufferSource();
     replacementNode.buffer = this._buffer;
     replacementNode.loop = this.loop;
+    replacementNode.onended = this._sourceNode.onended;
 
     // remove old node
     this._sourceNode.disconnect();
