@@ -199,14 +199,15 @@ export class Playback extends Controller {
    * @param delay Amount of time in seconds before the audio is stopped
    */
   stop(delay: number = 0.1): void {
+    // delete pause time if it exists
+    this._pauseTime = 0;
+
     if (this.isPlaying) {
       // record playback status
       this.isPlaying = false;
 
       // calculate adjusted delay time relative to the audio context
       const adjustedDelay = CONTEXT.currentTime + delay;
-      // delete pause time if it exists
-      this._pauseTime = 0;
 
       // stop current audio node
       this._sourceNode.stop(adjustedDelay);
